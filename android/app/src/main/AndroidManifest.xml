@@ -1,0 +1,11 @@
+<application>
+  <!-- You will only need to add this meta-data tag, but make sure it's a child of application -->
+  <meta-data
+    android:name="com.google.android.geo.API_KEY"
+    android:value="YOUR_API_KEY"/> <!-- Your key goes here. -->
+
+  <!-- You will also only need to add this uses-library tag -->
+  <uses-library android:name="org.apache.http.legacy" android:required="false"/>
+
+  <uses-permission android:name="android.permission.INTERNET" />
+</application>
