@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Dimensions, StyleSheet, Text, View } from 'react-native';
 import MapView, { LatLng, MapEvent, Marker, Polyline, WMSTile } from 'react-native-maps';
-import searchTargets from '../data/searchTargets';
+import { getSearchTargets } from '../data/searchTargets';
 import { getDistanceBetweenTwoPoints } from '../util/GeometrUtil';
 
 const { height, width } = Dimensions.get( 'window' );
@@ -9,6 +9,7 @@ const LATITUDE = 40.74333;
 const LONGITUDE = -73.99033;
 const LATITUDE_DELTA = 100;
 const LONGITUDE_DELTA = LATITUDE_DELTA * (width / height);
+const searchTargets = getSearchTargets();
 
 export default function TabTwoScreen() {
 
@@ -56,8 +57,13 @@ export default function TabTwoScreen() {
   const finished = lastItem && targetMarkerCoords;
 
   const onCheck = () => {
-    const newDistance = getDistanceBetweenTwoPoints(markerCoords, searchTargets[index].coordinates, true);
-    setTargetMarkerCoords(searchTargets[index].coordinates);
+    const latLng: LatLng = {
+      latitude: searchTargets[index].geometry.coordinates[1],
+      longitude: searchTargets[index].geometry.coordinates[0]
+    };
+
+    const newDistance = getDistanceBetweenTwoPoints(markerCoords, latLng, true);
+    setTargetMarkerCoords(latLng);
     if (newDistance) {
       setDistance(newDistance);
       setTotalDistance(Math.round((newDistance + totalDistance) * 100) / 100);
@@ -67,14 +73,18 @@ export default function TabTwoScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerView}>
+        {
+          <Text>
+            {index + 1}/{searchTargets.length}
+          </Text>
+        }
         <View style={styles.targetView}>
           <Text
             adjustsFontSizeToFit={true}
             numberOfLines={1}
             style={styles.targetLabel}
           >
-            {notStarted ? 'wo'
-              : searchTargets[index].name}
+            {notStarted ? 'wo' : searchTargets[index].properties.name}
           </Text>
           { distance > 0 &&
             <Text
@@ -82,7 +92,7 @@ export default function TabTwoScreen() {
               numberOfLines={1}
               style={styles.distance}
             >
-              {`${distance} km`}
+              {`${searchTargets[index].properties.adm0name} – ${distance} km`}
             </Text>
           }
         </View>

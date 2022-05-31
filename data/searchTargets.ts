@@ -1,25 +1,14 @@
-export default [{
-  name: 'Paris',
-  coordinates: {
-    latitude: 48.864716,
-    longitude: 2.349014
+import capitals from './capitals.json';
+
+function getRandomInt(max: number) {
+  return Math.floor(Math.random() * max);
+}
+
+export function getSearchTargets(amount = 10) {
+  const targets = [];
+  for (let index = 0; index < 10; index++) {
+    const random = getRandomInt(200);
+    targets.push(capitals.features[random])
   }
-}, {
-  name: 'Rome',
-  coordinates: {
-    latitude: 41.902782,
-    longitude: 12.496365
-  }
-}, {
-  name: 'Taipeh',
-  coordinates: {
-    latitude: 25.038410,
-    longitude: 121.563698
-  }
-}, {
-  name: 'Cologne',
-  coordinates: {
-    latitude: 50.937531,
-    longitude: 6.960279
-  }
-}];
+  return targets;
+};
