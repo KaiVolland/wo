@@ -1,15 +1,16 @@
+import { Feature, Point } from 'geojson';
 import { useState } from 'react';
-import { Button, Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import MapView, { LatLng, MapEvent, Marker, Polyline, WMSTile } from 'react-native-maps';
 import { getSearchTargets } from '../data/searchTargets';
 import { getDistanceBetweenTwoPoints } from '../util/GeometrUtil';
+import MapHeader, { ProgressStatus } from './MapHeader';
 
 const { height, width } = Dimensions.get( 'window' );
 const LATITUDE = 40.74333;
 const LONGITUDE = -73.99033;
 const LATITUDE_DELTA = 100;
 const LONGITUDE_DELTA = LATITUDE_DELTA * (width / height);
-const searchTargets = getSearchTargets();
 
 export default function TabTwoScreen() {
 
@@ -22,6 +23,7 @@ export default function TabTwoScreen() {
   const [markerCoords, setMarkerCoords] = useState<LatLng>();
   const [targetMarkerCoords, setTargetMarkerCoords] = useState<LatLng>();
   const [index, setIndex] = useState<number>(-1);
+  const [searchTargets, setSearchTargets] = useState<Feature<Point>[]>([]);
   const [totalDistance, setTotalDistance] = useState<number>(0);
   const [distance, setDistance] = useState<number>(0);
 
@@ -41,6 +43,8 @@ export default function TabTwoScreen() {
   const onStartPress = () => {
     setDistance(0);
     setIndex(0);
+    const newSearchTargets = getSearchTargets(10);
+    setSearchTargets(newSearchTargets);
   };
 
   const onRestartPress = () => {
@@ -51,12 +55,7 @@ export default function TabTwoScreen() {
     setTargetMarkerCoords(undefined);
   };
 
-  const notStarted = index < 0;
-  const lastItem = index === searchTargets.length - 1;
-  const inRange = index >= 0 && index < searchTargets.length - 1;
-  const finished = lastItem && targetMarkerCoords;
-
-  const onCheck = () => {
+  const onCheckPress = () => {
     const latLng: LatLng = {
       latitude: searchTargets[index].geometry.coordinates[1],
       longitude: searchTargets[index].geometry.coordinates[0]
@@ -70,61 +69,34 @@ export default function TabTwoScreen() {
     }
   };
 
+  const lastItem = index === searchTargets.length - 1;
+  const inRange = index >= 0 && index < searchTargets.length - 1;
+  const finished = lastItem && targetMarkerCoords;
+  let progressStatus: ProgressStatus = 'ready';
+  if (index < 0) {
+    progressStatus = 'ready';
+  } else if (inRange && targetMarkerCoords) {
+    progressStatus = 'next'
+  } else if (lastItem && targetMarkerCoords) {
+    progressStatus = 'restart';
+  } else if (markerCoords && !targetMarkerCoords) {
+    progressStatus = 'check';
+  } else {
+    progressStatus = 'guess';
+  }
+
   return (
     <View style={styles.container}>
-      <View style={styles.headerView}>
-        {
-          <Text>
-            {index + 1}/{searchTargets.length}
-          </Text>
-        }
-        <View style={styles.targetView}>
-          <Text
-            adjustsFontSizeToFit={true}
-            numberOfLines={1}
-            style={styles.targetLabel}
-          >
-            {notStarted ? 'wo' : searchTargets[index].properties.name}
-          </Text>
-          { distance > 0 &&
-            <Text
-              adjustsFontSizeToFit={true}
-              numberOfLines={1}
-              style={styles.distance}
-            >
-              {`${searchTargets[index].properties.adm0name} – ${distance} km`}
-            </Text>
-          }
-        </View>
-          { notStarted &&
-            <Button
-              onPress={onStartPress}
-              title="Lets go!"
-              color="#841584"
-            />
-          }
-          { inRange && targetMarkerCoords &&
-            <Button
-              onPress={onNextPress}
-              title="Next!"
-              color="#841584"
-            />
-          }
-          { lastItem && targetMarkerCoords &&
-            <Button
-              onPress={onRestartPress}
-              title="Restart!"
-              color="#841584"
-            />
-          }
-          { markerCoords && !targetMarkerCoords &&
-            <Button
-              onPress={onCheck}
-              title="Check!"
-              color="#ff22ee"
-            />
-          }
-      </View>
+      <MapHeader
+        counter={`${index + 1}/${searchTargets.length}`}
+        targetFeature={searchTargets[index]}
+        distance={distance}
+        onCheckPress={onCheckPress}
+        onStartPress={onStartPress}
+        onNextPress={onNextPress}
+        onRestartPress={onRestartPress}
+        progressStatus={progressStatus}
+      />
         {
           finished && totalDistance > 0 &&
             <Text
@@ -184,28 +156,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
     backgroundColor: '#eeeeee'
   },
-  distance: {
-    flex: 1,
-    textAlign: 'center'
-  },
   map: {
     flex: 9
-  },
-  targetLabel: {
-    color: '#333333',
-    fontSize: 30,
-    flex: 2,
-    textAlign: 'center',
-    textAlignVertical: 'center'
-  },
-  targetView: {
-    flex: 1
-  },
-  headerView: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'row',
-    backgroundColor: '#eeeeee',
-    borderBottomWidth: 1
   }
 });
